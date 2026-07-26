@@ -48,7 +48,6 @@ main { max-width: 1000px; margin: 0 auto; padding: 0 1rem; }
 @media (min-width: 768px) { 
     .stats-grid { grid-template-columns: repeat(4, 1fr); }
     .goal-card { grid-column: span 2; }
-    /* Memaksa elemen ke-5 (Total Read Time) mengambil 2 kolom agar seimbang */
     .stat-card:nth-child(5) { grid-column: span 2; }
 }
 
@@ -69,8 +68,17 @@ main { max-width: 1000px; margin: 0 auto; padding: 0 1rem; }
 .btn-utility.import { background-color: var(--primary-color); }
 .btn-utility:hover { opacity: 0.8; }
 
+/* Forms & Input Groups */
 .add-book-section h2 { margin-bottom: 1rem; }
-.input-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+.input-group { display: grid; gap: 1rem; margin-bottom: 1rem; grid-template-columns: 1fr; }
+
+/* Explicit column locking for wider screens to prevent empty spaces */
+@media (min-width: 768px) {
+    #add-book-form .input-group { grid-template-columns: repeat(5, 1fr); }
+    #wishlist-form .input-group { grid-template-columns: repeat(4, 1fr); }
+    #habit-form .input-group { grid-template-columns: repeat(3, 1fr); }
+}
+
 input, select, textarea { width: 100%; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 5px; background-color: var(--bg-color); color: var(--text-color); }
 textarea { resize: vertical; }
 .btn-submit { background-color: var(--primary-color); color: #fff; border: none; padding: 0.8rem 1.5rem; border-radius: 5px; cursor: pointer; font-size: 1rem; width: 100%; }
