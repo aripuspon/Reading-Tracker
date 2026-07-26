@@ -23,12 +23,10 @@ function init() {
     const storedLibrary = localStorage.getItem('rt_library');
     const storedWishlist = localStorage.getItem('rt_wishlist');
     const storedHabits = localStorage.getItem('rt_habits');
-
-    // Legacy fallback (from old versions)
     const oldLibrary = localStorage.getItem('readingTrackerBooks');
 
     if (storedLibrary) myLibrary = JSON.parse(storedLibrary);
-    else if (oldLibrary) myLibrary = JSON.parse(oldLibrary); // import old data
+    else if (oldLibrary) myLibrary = JSON.parse(oldLibrary);
 
     if (storedWishlist) myWishlist = JSON.parse(storedWishlist);
     if (storedHabits) myHabits = JSON.parse(storedHabits);
@@ -43,7 +41,6 @@ function init() {
     }
 
     if (readingGoal > 0) document.getElementById('goal-input').value = readingGoal;
-
     document.getElementById('habit-date').value = new Date().toISOString().split('T')[0];
 
     renderBooks();
@@ -287,7 +284,7 @@ document.getElementById('habit-form').addEventListener('submit', function(e) {
         pages: parseInt(document.getElementById('habit-pages').value)
     };
     myHabits.push(log);
-    myHabits.sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort descending
+    myHabits.sort((a, b) => new Date(b.date) - new Date(a.date)); 
     saveData();
     trackActivity(); 
     this.reset();
@@ -324,35 +321,59 @@ function deleteHabit(id) {
 
 // ---------------- MODALS & UTILS ---------------- //
 const progressModal = document.getElementById('progress-modal');
-const updatePagesRead = document.getElementById('update-pages-read');
 
 function openUpdateModal(id) {
     const book = myLibrary.find(b => b.id === id);
     document.getElementById('update-book-id').value = id;
-    updatePagesRead.value = book.pagesRead;
-    updatePagesRead.max = book.pages;
+    document.getElementById('update-title').value = book.title;
+    document.getElementById('update-author').value = book.author;
+    document.getElementById('update-genre').value = book.genre;
+    document.getElementById('update-status').value = book.status;
+    
+    const pagesReadInput = document.getElementById('update-pages-read');
+    pagesReadInput.value = book.pagesRead;
+    pagesReadInput.max = book.pages;
+    
+    document.getElementById('update-pages-total').value = book.pages;
+    document.getElementById('update-start-date').value = book.startDate || '';
+    document.getElementById('update-finish-date').value = book.finishDate || '';
+    
     progressModal.style.display = 'block';
 }
 
 document.getElementById('update-progress-form').addEventListener('submit', function(e) {
     e.preventDefault();
     const id = document.getElementById('update-book-id').value;
-    const newPagesRead = parseInt(updatePagesRead.value);
     const bookIndex = myLibrary.findIndex(b => b.id === id);
     
     if (bookIndex !== -1) {
         const book = myLibrary[bookIndex];
         const todayStr = new Date().toISOString().split('T')[0];
-
+        
+        book.title = document.getElementById('update-title').value;
+        book.author = document.getElementById('update-author').value;
+        book.genre = document.getElementById('update-genre').value;
+        book.status = document.getElementById('update-status').value;
+        
+        const newTotalPages = parseInt(document.getElementById('update-pages-total').value);
+        const newPagesRead = parseInt(document.getElementById('update-pages-read').value);
+        
+        book.pages = newTotalPages;
         book.pagesRead = newPagesRead;
-        if (!book.startDate) book.startDate = todayStr; // If it was Want to Read
+        
+        const startVal = document.getElementById('update-start-date').value;
+        const finishVal = document.getElementById('update-finish-date').value;
+        book.startDate = startVal ? startVal : null;
+        book.finishDate = finishVal ? finishVal : null;
 
+        // Auto-correction logic
         if (newPagesRead >= book.pages) {
             book.status = 'Finished';
             book.pagesRead = book.pages;
-            if(!book.finishDate) book.finishDate = todayStr;
+            if (!book.finishDate) book.finishDate = todayStr;
         } else if (newPagesRead > 0 && book.status === 'Want to Read') {
             book.status = 'Currently Reading';
+            if (!book.startDate) book.startDate = todayStr;
         }
 
         saveData();
@@ -455,7 +476,7 @@ document.getElementById('theme-toggle').addEventListener('click', () => {
     }
 });
 
-// Export / Import (Updated for 3 databases)
+// Export / Import
 document.getElementById('btn-export').addEventListener('click', () => {
     const data = { library: myLibrary, wishlist: myWishlist, habits: myHabits, streak, lastReadDate, readingGoal, totalTimeRead };
     const a = document.createElement('a');
