@@ -33,7 +33,15 @@ function init() {
     if (storedWishlist) myWishlist = JSON.parse(storedWishlist);
     if (storedHabits) myHabits = JSON.parse(storedHabits);
     
-    if (localStorage.getItem('theme') === 'dark') document.body.setAttribute('data-theme', 'dark');
+    // Explicit theme initialization
+    const currentTheme = localStorage.getItem('theme');
+    if (currentTheme === 'dark') {
+        document.body.setAttribute('data-theme', 'dark');
+    } else {
+        document.body.removeAttribute('data-theme');
+        localStorage.setItem('theme', 'light');
+    }
+
     if (readingGoal > 0) document.getElementById('goal-input').value = readingGoal;
 
     document.getElementById('habit-date').value = new Date().toISOString().split('T')[0];
@@ -435,7 +443,7 @@ document.getElementById('btn-start-timer').addEventListener('click', () => {
 document.getElementById('btn-pause-timer').addEventListener('click', () => { isTimerRunning = false; clearInterval(timerInterval); localStorage.setItem('totalTimeRead', totalTimeRead); renderStats(); });
 document.getElementById('btn-reset-timer').addEventListener('click', () => { isTimerRunning = false; clearInterval(timerInterval); localStorage.setItem('totalTimeRead', totalTimeRead); seconds = 0; document.getElementById('timer-display').innerText = formatTime(seconds); renderStats(); });
 
-// Theme - FIXED
+// Theme
 document.getElementById('theme-toggle').addEventListener('click', () => {
     const isDark = document.body.getAttribute('data-theme') === 'dark';
     if (isDark) {
