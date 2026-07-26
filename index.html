@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Reading Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <h1>📚 Reading Tracker</h1>
+            <button id="theme-toggle" class="btn-theme">🌓 Toggle Theme</button>
+        </div>
+    </header>
+
+    <main>
+        <!-- Tab Navigation -->
+        <nav class="tab-nav">
+            <button class="tab-btn active" data-tab="tab-library">📚 Library & Dashboard</button>
+            <button class="tab-btn" data-tab="tab-wishlist">💡 Wishlist</button>
+            <button class="tab-btn" data-tab="tab-habit">📅 Daily Habit Log</button>
+        </nav>
+
+        <!-- TAB 1: LIBRARY & DASHBOARD -->
+        <div id="tab-library" class="tab-content active">
+            
+            <section class="timer-section">
+                <h2>⏱️ Reading Timer</h2>
+                <div class="timer-display" id="timer-display">00:00:00</div>
+                <div class="timer-controls">
+                    <button id="btn-start-timer" class="btn-timer start">Start</button>
+                    <button id="btn-pause-timer" class="btn-timer pause">Pause</button>
+                    <button id="btn-reset-timer" class="btn-timer reset">Reset</button>
+                </div>
+            </section>
+
+            <section class="stats-section">
+                <h2>📊 Analytics & Goals</h2>
+                <div class="stats-grid">
+                    <div class="stat-card streak-card">
+                        <h3>Current Streak</h3>
+                        <div class="stat-value"><span id="streak-count">0</span> 🔥</div>
+                        <p class="stat-desc">Days in a row</p>
+                    </div>
+                    <div class="stat-card goal-card">
+                        <h3>2026 Challenge</h3>
+                        <div class="goal-input-container">
+                            <input type="number" id="goal-input" min="1" placeholder="Target books">
+                            <button id="btn-set-goal" class="btn-action btn-update" style="padding: 0.3rem 0.8rem;">Set</button>
+                        </div>
+                        <div class="progress-container">
+                            <div id="goal-progress-bar" class="progress-bar" style="width: 0%"></div>
+                        </div>
+                        <p class="stat-desc" id="goal-text">0 of 0 books completed</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Books Finished</h3>
+                        <div class="stat-value" id="stat-finished">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Pages Read</h3>
+                        <div class="stat-value" id="stat-pages">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Read Time</h3>
+                        <div class="stat-value" id="stat-time">00:00:00</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Average Rating</h3>
+                        <div class="stat-value" id="stat-rating">0.0 🌟</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="utilities-section">
+                <div class="search-sort-group">
+                    <input type="text" id="search-bar" placeholder="Search title or author...">
+                    <select id="sort-select">
+                        <option value="newest">Sort by: Recently Added</option>
+                        <option value="title">Sort by: Title (A - Z)</option>
+                        <option value="rating">Sort by: Highest Rating</option>
+                        <option value="progress">Sort by: Most Progress</option>
+                    </select>
+                </div>
+                <div class="backup-group">
+                    <button id="btn-export" class="btn-utility export">📥 Export Data</button>
+                    <input type="file" id="file-import" accept=".json" style="display: none;">
+                    <button id="btn-import" class="btn-utility import">📤 Import Data</button>
+                </div>
+            </section>
+
+            <section class="add-book-section">
+                <h2>Add New Book</h2>
+                <form id="add-book-form">
+                    <div class="input-group">
+                        <input type="text" id="title" placeholder="Book Title" required>
+                        <input type="text" id="author" placeholder="Author Name" required>
+                        <input type="number" id="pages" placeholder="Total Pages" min="1" required>
+                        <select id="genre" required>
+                            <option value="" disabled selected>Select Genre</option>
+                            <option value="Fiksi">Fiksi</option>
+                            <option value="Non-fiksi">Non-fiksi</option>
+                            <option value="Sejarah">Sejarah</option>
+                            <option value="Productivity">Productivity</option>
+                            <option value="Financial">Financial</option>
+                            <option value="Biografi">Biografi</option>
+                            <option value="Self-Development">Self-Development</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                        <select id="status">
+                            <option value="Want to Read">Want to Read</option>
+                            <option value="Currently Reading">Currently Reading</option>
+                            <option value="Finished">Finished</option>
+                            <option value="DNF">DNF</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-submit">Add to Library</button>
+                </form>
+            </section>
+
+            <section class="filter-section">
+                <button class="filter-btn active" data-status="All">All Books</button>
+                <button class="filter-btn" data-status="Want to Read">Want to Read</button>
+                <button class="filter-btn" data-status="Currently Reading">Currently Reading</button>
+                <button class="filter-btn" data-status="Finished">Finished</button>
+                <button class="filter-btn" data-status="DNF">DNF</button>
+            </section>
+
+            <section class="books-container" id="books-container">
+                <!-- Book cards -->
+            </section>
+        </div>
+
+        <!-- TAB 2: WISHLIST -->
+        <div id="tab-wishlist" class="tab-content">
+            <section class="add-book-section">
+                <h2>Add to Wishlist</h2>
+                <form id="wishlist-form">
+                    <div class="input-group">
+                        <input type="text" id="wl-title" placeholder="Book Title" required>
+                        <input type="text" id="wl-author" placeholder="Author Name" required>
+                        <select id="wl-genre" required>
+                            <option value="Fiksi">Fiksi</option>
+                            <option value="Non-fiksi">Non-fiksi</option>
+                            <option value="Sejarah">Sejarah</option>
+                            <option value="Productivity">Productivity</option>
+                            <option value="Financial">Financial</option>
+                            <option value="Biografi">Biografi</option>
+                            <option value="Self-Development">Self-Development</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                        <select id="wl-plan" required>
+                            <option value="Beli">Rencana: Beli</option>
+                            <option value="Pinjam">Rencana: Pinjam</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-submit">Save to Wishlist</button>
+                </form>
+            </section>
+
+            <section class="books-container" id="wishlist-container">
+                <!-- Wishlist cards -->
+            </section>
+        </div>
+
+        <!-- TAB 3: DAILY HABIT LOG -->
+        <div id="tab-habit" class="tab-content">
+            <section class="add-book-section">
+                <h2>Log Today's Reading</h2>
+                <form id="habit-form">
+                    <div class="input-group">
+                        <input type="date" id="habit-date" required>
+                        <input type="number" id="habit-minutes" placeholder="Minutes Read" min="1" required>
+                        <input type="number" id="habit-pages" placeholder="Pages Read" min="1" required>
+                    </div>
+                    <button type="submit" class="btn-submit">Save Log</button>
+                </form>
+            </section>
+
+            <section class="habit-table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Time Spent (Minutes)</th>
+                            <th>Pages Read</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="habit-table-body">
+                        <!-- Habit rows -->
+                    </tbody>
+                </table>
+            </section>
+        </div>
+
+        <!-- Modals (Global - luar tab) -->
+        <div id="progress-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-btn" id="close-progress">&times;</span>
+                <h2>Update Progress</h2>
+                <form id="update-progress-form">
+                    <input type="hidden" id="update-book-id">
+                    <div class="modal-input-group">
+                        <label for="update-pages-read">Pages Read:</label>
+                        <input type="number" id="update-pages-read" min="0" required>
+                    </div>
+                    <button type="submit" class="btn-submit">Save Progress</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="journal-modal" class="modal">
+            <div class="modal-content journal-content">
+                <span class="close-btn" id="close-journal">&times;</span>
+                <h2 id="journal-book-title">Book Title</h2>
+                <div class="journal-section">
+                    <h3>My Rating</h3>
+                    <div class="star-rating" id="star-rating-container">
+                        <span data-value="1" class="star">&#9733;</span>
+                        <span data-value="2" class="star">&#9733;</span>
+                        <span data-value="3" class="star">&#9733;</span>
+                        <span data-value="4" class="star">&#9733;</span>
+                        <span data-value="5" class="star">&#9733;</span>
+                    </div>
+                </div>
+                <div class="journal-section">
+                    <h3>My Review</h3>
+                    <textarea id="journal-review" rows="4" placeholder="Write your thoughts here..."></textarea>
+                    <button id="btn-save-review" class="btn-submit" style="margin-top: 10px;">Save Review</button>
+                </div>
+                <div class="journal-section">
+                    <h3>Favorite Quotes</h3>
+                    <form id="add-quote-form" class="quote-form">
+                        <input type="text" id="quote-text" placeholder="Enter memorable quote..." required>
+                        <input type="number" id="quote-page" placeholder="Pg." min="1" style="width: 80px;" required>
+                        <button type="submit" class="btn-submit">Add</button>
+                    </form>
+                    <ul id="quotes-list" class="quotes-list"></ul>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
