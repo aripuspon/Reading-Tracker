@@ -195,18 +195,73 @@
             </section>
         </div>
 
-        <!-- Modals (Global - luar tab) -->
+        <!-- Modals -->
         <div id="progress-modal" class="modal">
-            <div class="modal-content">
+            <div class="modal-content" style="max-width: 500px;">
                 <span class="close-btn" id="close-progress">&times;</span>
-                <h2>Update Progress</h2>
+                <h2>Update Book Details</h2>
                 <form id="update-progress-form">
                     <input type="hidden" id="update-book-id">
-                    <div class="modal-input-group">
-                        <label for="update-pages-read">Pages Read:</label>
-                        <input type="number" id="update-pages-read" min="0" required>
+                    
+                    <div class="modal-input-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <label>Title</label>
+                            <input type="text" id="update-title" required>
+                        </div>
+                        <div>
+                            <label>Author</label>
+                            <input type="text" id="update-author" required>
+                        </div>
                     </div>
-                    <button type="submit" class="btn-submit">Save Progress</button>
+
+                    <div class="modal-input-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <label>Genre</label>
+                            <select id="update-genre" required>
+                                <option value="Fiction">Fiction</option>
+                                <option value="Non-fiction">Non-fiction</option>
+                                <option value="History">History</option>
+                                <option value="Productivity">Productivity</option>
+                                <option value="Financial">Financial</option>
+                                <option value="Biography">Biography</option>
+                                <option value="Self-Development">Self-Development</option>
+                                <option value="Others">Others</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Status</label>
+                            <select id="update-status">
+                                <option value="Want to Read">Want to Read</option>
+                                <option value="Currently Reading">Currently Reading</option>
+                                <option value="Finished">Finished</option>
+                                <option value="DNF">DNF</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="modal-input-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <label>Pages Read</label>
+                            <input type="number" id="update-pages-read" min="0" required>
+                        </div>
+                        <div>
+                            <label>Total Pages</label>
+                            <input type="number" id="update-pages-total" min="1" required>
+                        </div>
+                    </div>
+
+                    <div class="modal-input-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <label>Start Date</label>
+                            <input type="date" id="update-start-date">
+                        </div>
+                        <div>
+                            <label>Finish Date</label>
+                            <input type="date" id="update-finish-date">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Save Changes</button>
                 </form>
             </div>
         </div>
