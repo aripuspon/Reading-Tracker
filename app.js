@@ -73,7 +73,7 @@ function init() {
     renderHabits();
 
     // Sinkronkan dari Cloud jika SCRIPT_URL ada
-    if (SCRIPT_URL && SCRIPT_URL.trim() !== '' && !SCRIPT_URL.includes('PASTE_YOUR_GOOGLE')) {
+    if (SCRIPT_URL && SCRIPT_URL.trim() !== '' && !SCRIPT_URL.includes('https://script.google.com/macros/s/AKfycbyNdzf0IHZZ2dDid2q6obDJ2G2S-DjUdscdcctYmXr2w116J2CUbP7XaUJcO66mk4gGnA/exec')) {
         syncFromCloud();
     }
 }
@@ -609,4 +609,84 @@ document.getElementById('add-quote-form').addEventListener('submit', function(e)
 function renderQuotes(book) {
     const list = document.getElementById('quotes-list');
     if (!list) return;
-    list.innerHTML
+    list.innerHTML = (book.quotes && book.quotes.length) ? book.quotes.map(q => `
+        <li class="quote-item">
+            <div><span class="quote-text-content">"${escapeHtml(q.text)}"</span><span class="quote-page-info">Page ${escapeHtml(q.page)}</span></div>
+            <button class="btn-delete-quote" onclick="deleteQuote('${q.id}')">&times;</button>
+        </li>`).join('') : '<p style="opacity: 0.6;">No quotes added.</p>';
+}
+
+window.deleteQuote = function(quoteId) {
+    const book = myLibrary.find(b => b.id === currentJournalBookId);
+    if (book && book.quotes) { book.quotes = book.quotes.filter(q => q.id !== quoteId); saveData(); renderQuotes(book); }
+};
+
+document.getElementById('close-progress').onclick = () => progressModal.style.display = 'none';
+document.getElementById('close-journal').onclick = () => document.getElementById('journal-modal').style.display = 'none';
+window.onclick = e => { if (e.target === progressModal) progressModal.style.display = 'none'; if (e.target === document.getElementById('journal-modal')) document.getElementById('journal-modal').style.display = 'none'; };
+
+// Filter & Sort Listeners
+document.querySelectorAll('.filter-btn').forEach(btn => btn.addEventListener('click', e => {
+    currentFilter = e.target.dataset.status;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active');
+    renderBooks();
+}));
+document.getElementById('search-bar').addEventListener('input', e => { searchQuery = e.target.value.toLowerCase(); renderBooks(); });
+document.getElementById('sort-select').addEventListener('change', e => { currentSort = e.target.value; renderBooks(); });
+
+// Timer Logic
+function formatTime(secs) { return `${String(Math.floor(secs/3600)).padStart(2,'0')}:${String(Math.floor((secs%3600)/60)).padStart(2,'0')}:${String(secs%60).padStart(2,'0')}`; }
+document.getElementById('btn-start-timer').addEventListener('click', () => {
+    if (!isTimerRunning) {
+        isTimerRunning = true; trackActivity();
+        timerInterval = setInterval(() => {
+            seconds++; totalTimeRead++;
+            document.getElementById('timer-display').innerText = formatTime(seconds);
+            if(seconds % 60 === 0) { localStorage.setItem('totalTimeRead', totalTimeRead); renderStats(); saveData(); }
+        }, 1000);
+    }
+});
+document.getElementById('btn-pause-timer').addEventListener('click', () => { isTimerRunning = false; clearInterval(timerInterval); localStorage.setItem('totalTimeRead', totalTimeRead); renderStats(); saveData(); });
+document.getElementById('btn-reset-timer').addEventListener('click', () => { isTimerRunning = false; clearInterval(timerInterval); localStorage.setItem('totalTimeRead', totalTimeRead); seconds = 0; document.getElementById('timer-display').innerText = formatTime(seconds); renderStats(); saveData(); });
+
+// Theme
+document.getElementById('theme-toggle').addEventListener('click', () => {
+    const isDark = document.body.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+        document.body.removeAttribute('data-theme');
+        localStorage.setItem('theme', 'light');
+    } else {
+        document.body.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+    }
+});
+
+// Export / Import
+document.getElementById('btn-export').addEventListener('click', () => {
+    const data = { library: myLibrary, wishlist: myWishlist, habits: myHabits, streak, lastReadDate, readingGoal, totalTimeRead };
+    const a = document.createElement('a');
+    a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
+    a.download = `reading-tracker-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+});
+document.getElementById('btn-import').addEventListener('click', () => document.getElementById('file-import').click());
+document.getElementById('file-import').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file || !confirm('Overwrite current data?')) { e.target.value = ''; return; }
+    const reader = new FileReader();
+    reader.onload = ev => {
+        try {
+            const d = JSON.parse(ev.target.result);
+            if (d.library) {
+                myLibrary = d.library; myWishlist = d.wishlist || []; myHabits = d.habits || [];
+                streak = d.streak || 0; lastReadDate = d.lastReadDate || null; readingGoal = d.readingGoal || 0; totalTimeRead = d.totalTimeRead || 0;
+                saveData(); localStorage.setItem('readingStreak', streak); if(lastReadDate) localStorage.setItem('lastReadDate', lastReadDate); localStorage.setItem('readingGoal', readingGoal); localStorage.setItem('totalTimeRead', totalTimeRead);
+                alert('Success!'); location.reload();
+            }
+        } catch(err) { alert('Invalid backup file format.'); }
+    };
+    reader.readAsText(file);
+});
+
+init();
