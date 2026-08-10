@@ -1,3 +1,10 @@
+// =========================================================================
+// GOOGLE SHEETS HYBRID API CONFIGURATION
+// Ganti teks di bawah ini dengan URL Web App dari Apps Script kamu:
+// Contoh: 'https://script.google.com/macros/s/AKfycbx.../exec'
+// =========================================================================
+const SCRIPT_URL = 'PASTE_YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
+
 // Data States
 let myLibrary = [];
 let myWishlist = [];
@@ -20,6 +27,7 @@ let totalTimeRead = parseInt(localStorage.getItem('totalTimeRead')) || 0;
 
 // Initialize
 function init() {
+    // 1. Load data cepat dari LocalStorage dulu (Instant UI)
     const storedLibrary = localStorage.getItem('rt_library');
     const storedWishlist = localStorage.getItem('rt_wishlist');
     const storedHabits = localStorage.getItem('rt_habits');
@@ -31,7 +39,7 @@ function init() {
     if (storedWishlist) myWishlist = JSON.parse(storedWishlist);
     if (storedHabits) myHabits = JSON.parse(storedHabits);
     
-    // Explicit theme initialization
+    // Inisialisasi Tema (Default Light)
     const currentTheme = localStorage.getItem('theme');
     if (currentTheme === 'dark') {
         document.body.setAttribute('data-theme', 'dark');
@@ -46,12 +54,115 @@ function init() {
     renderBooks();
     renderWishlist();
     renderHabits();
+
+    // 2. Sinkronkan dari Cloud (Google Sheets) di latar belakang
+    syncFromCloud();
 }
 
+// Simpan Lokal & Trigger Kirim ke Google Sheets
 function saveData() {
+    saveDataLocalOnly();
+    syncToCloud();
+}
+
+function saveDataLocalOnly() {
     localStorage.setItem('rt_library', JSON.stringify(myLibrary));
     localStorage.setItem('rt_wishlist', JSON.stringify(myWishlist));
     localStorage.setItem('rt_habits', JSON.stringify(myHabits));
+}
+
+// Background Sync Ke Google Sheets
+function syncToCloud() {
+    if (!SCRIPT_URL || SCRIPT_URL.includes('PASTE_YOUR_GOOGLE')) return;
+
+    const payload = {
+        library: myLibrary.map(b => ({
+            ...b,
+            quotes: JSON.stringify(b.quotes || [])
+        })),
+        wishlist: myWishlist,
+        habits: myHabits,
+        meta: {
+            streak: streak,
+            lastReadDate: lastReadDate || "",
+            readingGoal: readingGoal,
+            totalTimeRead: totalTimeRead
+        }
+    };
+
+    fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    }).catch(err => console.log('Pending Google Sheets sync:', err));
+}
+
+// Ambil Data Terbaru dari Google Sheets saat Web Dibuka
+async function syncFromCloud() {
+    if (!SCRIPT_URL || SCRIPT_URL.includes('PASTE_YOUR_GOOGLE')) return;
+
+    try {
+        const response = await fetch(SCRIPT_URL);
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (data.library && data.library.length > 0) {
+                myLibrary = data.library.map(b => {
+                    let quotesArr = [];
+                    try {
+                        quotesArr = typeof b.quotes === 'string' ? JSON.parse(b.quotes || '[]') : (b.quotes || []);
+                    } catch(e) { quotesArr = []; }
+
+                    return {
+                        ...b,
+                        pages: parseInt(b.pages) || 0,
+                        pagesRead: parseInt(b.pagesRead) || 0,
+                        rating: parseInt(b.rating) || 0,
+                        quotes: quotesArr
+                    };
+                });
+            }
+
+            if (data.wishlist && data.wishlist.length > 0) {
+                myWishlist = data.wishlist;
+            }
+
+            if (data.habits && data.habits.length > 0) {
+                myHabits = data.habits.map(h => ({
+                    ...h,
+                    minutes: parseInt(h.minutes) || 0,
+                    pages: parseInt(h.pages) || 0
+                }));
+            }
+
+            if (data.meta) {
+                if (data.meta.streak !== undefined && data.meta.streak !== "") {
+                    streak = parseInt(data.meta.streak) || 0;
+                    localStorage.setItem('readingStreak', streak);
+                }
+                if (data.meta.lastReadDate) {
+                    lastReadDate = data.meta.lastReadDate;
+                    localStorage.setItem('lastReadDate', lastReadDate);
+                }
+                if (data.meta.readingGoal !== undefined && data.meta.readingGoal !== "") {
+                    readingGoal = parseInt(data.meta.readingGoal) || 0;
+                    localStorage.setItem('readingGoal', readingGoal);
+                }
+                if (data.meta.totalTimeRead !== undefined && data.meta.totalTimeRead !== "") {
+                    totalTimeRead = parseInt(data.meta.totalTimeRead) || 0;
+                    localStorage.setItem('totalTimeRead', totalTimeRead);
+                }
+            }
+
+            saveDataLocalOnly();
+            renderBooks();
+            renderWishlist();
+            renderHabits();
+        }
+    } catch (err) {
+        console.log('Cloud sync error or offline:', err);
+    }
 }
 
 // Tab Navigation Logic
@@ -91,6 +202,7 @@ document.getElementById('btn-set-goal').addEventListener('click', () => {
         readingGoal = goal;
         localStorage.setItem('readingGoal', readingGoal);
         renderStats();
+        saveData();
     }
 });
 
@@ -423,7 +535,7 @@ document.getElementById('add-quote-form').addEventListener('submit', function(e)
 
 function renderQuotes(book) {
     const list = document.getElementById('quotes-list');
-    list.innerHTML = book.quotes.length ? book.quotes.map(q => `
+    list.innerHTML = (book.quotes && book.quotes.length) ? book.quotes.map(q => `
         <li class="quote-item">
             <div><span class="quote-text-content">"${q.text}"</span><span class="quote-page-info">Page ${q.page}</span></div>
             <button class="btn-delete-quote" onclick="deleteQuote('${q.id}')">&times;</button>
@@ -457,12 +569,12 @@ document.getElementById('btn-start-timer').addEventListener('click', () => {
         timerInterval = setInterval(() => {
             seconds++; totalTimeRead++;
             document.getElementById('timer-display').innerText = formatTime(seconds);
-            if(seconds % 60 === 0) { localStorage.setItem('totalTimeRead', totalTimeRead); renderStats(); }
+            if(seconds % 60 === 0) { localStorage.setItem('totalTimeRead', totalTimeRead); renderStats(); saveData(); }
         }, 1000);
     }
 });
-document.getElementById('btn-pause-timer').addEventListener('click', () => { isTimerRunning = false; clearInterval(timerInterval); localStorage.setItem('totalTimeRead', totalTimeRead); renderStats(); });
-document.getElementById('btn-reset-timer').addEventListener('click', () => { isTimerRunning = false; clearInterval(timerInterval); localStorage.setItem('totalTimeRead', totalTimeRead); seconds = 0; document.getElementById('timer-display').innerText = formatTime(seconds); renderStats(); });
+document.getElementById('btn-pause-timer').addEventListener('click', () => { isTimerRunning = false; clearInterval(timerInterval); localStorage.setItem('totalTimeRead', totalTimeRead); renderStats(); saveData(); });
+document.getElementById('btn-reset-timer').addEventListener('click', () => { isTimerRunning = false; clearInterval(timerInterval); localStorage.setItem('totalTimeRead', totalTimeRead); seconds = 0; document.getElementById('timer-display').innerText = formatTime(seconds); renderStats(); saveData(); });
 
 // Theme
 document.getElementById('theme-toggle').addEventListener('click', () => {
