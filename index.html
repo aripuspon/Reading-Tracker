@@ -90,7 +90,7 @@
 
             <section class="add-book-section">
                 <h2>Add New Book</h2>
-                <form id="add-book-form">
+                <form id="add-book-form" onsubmit="event.preventDefault();">
                     <div class="input-group">
                         <input type="text" id="title" placeholder="Book Title" required>
                         <input type="text" id="author" placeholder="Author Name" required>
@@ -132,7 +132,7 @@
         <div id="tab-wishlist" class="tab-content">
             <section class="add-book-section">
                 <h2>Add to Wishlist</h2>
-                <form id="wishlist-form">
+                <form id="wishlist-form" onsubmit="event.preventDefault();">
                     <div class="input-group">
                         <input type="text" id="wl-title" placeholder="Book Title" required>
                         <input type="text" id="wl-author" placeholder="Author Name" required>
@@ -162,7 +162,7 @@
         <div id="tab-habit" class="tab-content">
             <section class="add-book-section">
                 <h2>Log Today's Reading</h2>
-                <form id="habit-form">
+                <form id="habit-form" onsubmit="event.preventDefault();">
                     <div class="input-group">
                         <input type="date" id="habit-date" required>
                         <input type="number" id="habit-minutes" placeholder="Minutes Read" min="1" required>
@@ -192,7 +192,7 @@
             <div class="modal-content" style="max-width: 500px;">
                 <span class="close-btn" id="close-progress">&times;</span>
                 <h2>Update Book Details</h2>
-                <form id="update-progress-form">
+                <form id="update-progress-form" onsubmit="event.preventDefault();">
                     <input type="hidden" id="update-book-id">
                     
                     <div class="modal-input-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -279,7 +279,7 @@
                 </div>
                 <div class="journal-section">
                     <h3>Favorite Quotes</h3>
-                    <form id="add-quote-form" class="quote-form">
+                    <form id="add-quote-form" class="quote-form" onsubmit="event.preventDefault();">
                         <input type="text" id="quote-text" placeholder="Enter memorable quote..." required>
                         <input type="number" id="quote-page" placeholder="Pg." min="1" style="width: 80px;" required>
                         <button type="submit" class="btn-submit">Add</button>
