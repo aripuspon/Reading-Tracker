@@ -73,7 +73,7 @@ function init() {
     renderHabits();
 
     // Sinkronkan dari Cloud jika SCRIPT_URL ada
-    if (SCRIPT_URL && SCRIPT_URL.trim() !== '' && !SCRIPT_URL.includes('https://script.google.com/macros/s/AKfycbyNdzf0IHZZ2dDid2q6obDJ2G2S-DjUdscdcctYmXr2w116J2CUbP7XaUJcO66mk4gGnA/exec')) {
+    if (SCRIPT_URL && SCRIPT_URL.trim() !== '' && !SCRIPT_URL.includes('PASTE_YOUR_GOOGLE')) {
         syncFromCloud();
     }
 }
@@ -91,7 +91,7 @@ function saveData() {
 
 // Background Sync Ke Google Sheets
 function syncToCloud() {
-    if (!SCRIPT_URL || SCRIPT_URL.trim() === '' || SCRIPT_URL.includes('https://script.google.com/macros/s/AKfycbyNdzf0IHZZ2dDid2q6obDJ2G2S-DjUdscdcctYmXr2w116J2CUbP7XaUJcO66mk4gGnA/exec')) return;
+    if (!SCRIPT_URL || SCRIPT_URL.trim() === '' || SCRIPT_URL.includes('PASTE_YOUR_GOOGLE')) return;
 
     const payload = {
         library: myLibrary.map(b => ({
@@ -118,7 +118,7 @@ function syncToCloud() {
 
 // Ambil Data Terbaru dari Google Sheets saat Web Dibuka
 async function syncFromCloud() {
-    if (!SCRIPT_URL || SCRIPT_URL.trim() === '' || SCRIPT_URL.includes('https://script.google.com/macros/s/AKfycbyNdzf0IHZZ2dDid2q6obDJ2G2S-DjUdscdcctYmXr2w116J2CUbP7XaUJcO66mk4gGnA/exec')) return;
+    if (!SCRIPT_URL || SCRIPT_URL.trim() === '' || SCRIPT_URL.includes('PASTE_YOUR_GOOGLE')) return;
 
     try {
         const response = await fetch(SCRIPT_URL);
