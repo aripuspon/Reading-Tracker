@@ -2,7 +2,7 @@
 // GOOGLE SHEETS HYBRID API CONFIGURATION
 // Tempel URL Google Apps Script kamu di sini:
 // =========================================================================
-const SCRIPT_URL = ''; 
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyNdzf0IHZZ2dDid2q6obDJ2G2S-DjUdscdcctYmXr2w116J2CUbP7XaUJcO66mk4gGnA/exec'; 
 
 // Data States
 let myLibrary = [];
