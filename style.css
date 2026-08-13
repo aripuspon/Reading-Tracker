@@ -48,7 +48,8 @@ main { max-width: 1000px; margin: 0 auto; padding: 0 1rem; }
 @media (min-width: 768px) { 
     .stats-grid { grid-template-columns: repeat(4, 1fr); }
     .goal-card { grid-column: span 2; }
-    .stat-card:nth-child(5) { grid-column: span 2; }
+    /* Agar Total Pages dan Average Rating seimbang (masing-masing 2 kolom) */
+    .stat-card:nth-child(4), .stat-card:nth-child(5) { grid-column: span 2; }
 }
 
 .stat-card h3 { font-size: 0.9rem; color: var(--primary-color); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px; }
