@@ -2,7 +2,7 @@
 // GOOGLE SHEETS HYBRID API CONFIGURATION
 // Tempel URL Google Apps Script kamu di sini:
 // =========================================================================
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyNdzf0IHZZ2dDid2q6obDJ2G2S-DjUdscdcctYmXr2w116J2CUbP7XaUJcO66mk4gGnA/exec'; 
+const SCRIPT_URL = ''; 
 
 // Data States
 let myLibrary = [];
@@ -19,10 +19,7 @@ let timerInterval;
 let seconds = 0;
 let isTimerRunning = false;
 
-let streak = parseInt(localStorage.getItem('readingStreak')) || 0;
-let lastReadDate = localStorage.getItem('lastReadDate') || null;
 let readingGoal = parseInt(localStorage.getItem('readingGoal')) || 0;
-let totalTimeRead = parseInt(localStorage.getItem('totalTimeRead')) || 0;
 
 function escapeHtml(str) {
     if (!str) return '';
@@ -101,10 +98,7 @@ function syncToCloud() {
         wishlist: myWishlist,
         habits: myHabits,
         meta: {
-            streak: streak,
-            lastReadDate: lastReadDate || "",
-            readingGoal: readingGoal,
-            totalTimeRead: totalTimeRead
+            readingGoal: readingGoal
         }
     };
 
@@ -157,7 +151,6 @@ async function syncFromCloud() {
                     status: String(b.status || 'Want to Read'),
                     rating: parseInt(b.rating) || 0,
                     review: String(b.review || ''),
-                    // Bersihkan format T17:00:00.000Z dari Sheets
                     startDate: b.startDate ? String(b.startDate).split('T')[0] : null,
                     finishDate: b.finishDate ? String(b.finishDate).split('T')[0] : null,
                     quotes: quotesArr
@@ -188,21 +181,9 @@ async function syncFromCloud() {
         }
 
         if (data.meta) {
-            if (data.meta.streak !== undefined && data.meta.streak !== "") {
-                streak = parseInt(data.meta.streak) || 0;
-                localStorage.setItem('readingStreak', streak);
-            }
-            if (data.meta.lastReadDate) {
-                lastReadDate = data.meta.lastReadDate;
-                localStorage.setItem('lastReadDate', lastReadDate);
-            }
             if (data.meta.readingGoal !== undefined && data.meta.readingGoal !== "") {
                 readingGoal = parseInt(data.meta.readingGoal) || 0;
                 localStorage.setItem('readingGoal', readingGoal);
-            }
-            if (data.meta.totalTimeRead !== undefined && data.meta.totalTimeRead !== "") {
-                totalTimeRead = parseInt(data.meta.totalTimeRead) || 0;
-                localStorage.setItem('totalTimeRead', totalTimeRead);
             }
         }
 
@@ -228,26 +209,6 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     });
 });
 
-// Gamification Logic
-function trackActivity() {
-    const today = new Date().toDateString();
-    if (lastReadDate !== today) {
-        if (lastReadDate) {
-            const lastDate = new Date(lastReadDate);
-            const currentDate = new Date();
-            const diffDays = Math.ceil(Math.abs(currentDate - lastDate) / (1000 * 60 * 60 * 24)); 
-            
-            if (diffDays === 1) streak++; 
-            else if (diffDays > 1) streak = 1; 
-        } else streak = 1; 
-        
-        lastReadDate = today;
-        localStorage.setItem('readingStreak', streak);
-        localStorage.setItem('lastReadDate', lastReadDate);
-    }
-    renderStats();
-}
-
 document.getElementById('btn-set-goal').addEventListener('click', () => {
     const goal = parseInt(document.getElementById('goal-input').value);
     if (goal > 0) {
@@ -268,11 +229,46 @@ function renderStats() {
         avgRating = (ratedBooks.reduce((sum, book) => sum + (parseInt(book.rating) || 0), 0) / ratedBooks.length).toFixed(1);
     }
 
+    // Dynamic Streak Calculation based ONLY on myHabits data
+    let calculatedStreak = 0;
+    if (myHabits && myHabits.length > 0) {
+        // Ambil list tanggal unik (bersih tanpa jam) dari yg terbaru ke terlama
+        const uniqueDates = [...new Set(myHabits.map(h => String(h.date).split('T')[0]))].sort((a, b) => a < b ? 1 : (a > b ? -1 : 0));
+        
+        let checkDate = new Date();
+        checkDate.setHours(0,0,0,0);
+        
+        // Fungsi pembantu untuk konversi string YYYY-MM-DD ke format jam 00:00 lokal
+        const parseDateLocal = (dStr) => {
+            const p = dStr.split('-');
+            return new Date(p[0], p[1]-1, p[2]);
+        };
+        
+        let firstLogDate = parseDateLocal(uniqueDates[0]);
+        let diffDaysFirst = Math.floor((checkDate - firstLogDate) / (1000 * 60 * 60 * 24));
+        
+        // Jika ada log di hari ini (0) atau kemarin (1), hitung streak mundur.
+        if (diffDaysFirst <= 1) {
+            calculatedStreak = 1;
+            let referenceDate = firstLogDate;
+            for (let i = 1; i < uniqueDates.length; i++) {
+                let prevDate = parseDateLocal(uniqueDates[i]);
+                let diff = Math.round((referenceDate - prevDate) / (1000 * 60 * 60 * 24));
+                
+                if (diff === 1) {
+                    calculatedStreak++;
+                    referenceDate = prevDate;
+                } else if (diff > 1) {
+                    break; // Streak terputus
+                }
+            }
+        }
+    }
+
     document.getElementById('stat-finished').innerText = finishedBooks.length;
     document.getElementById('stat-pages').innerText = totalPages;
     document.getElementById('stat-rating').innerText = `${avgRating} 🌟`;
-    document.getElementById('streak-count').innerText = streak;
-    document.getElementById('stat-time').innerText = formatTime(totalTimeRead);
+    document.getElementById('streak-count').innerText = calculatedStreak;
 
     const goalProgressBar = document.getElementById('goal-progress-bar');
     if (readingGoal > 0) {
@@ -345,7 +341,6 @@ function renderBooks() {
             const percentage = pages > 0 ? Math.min(Math.round((pagesRead / pages) * 100), 100) : 0;
             const stars = (book.rating && book.rating > 0) ? `<div style="color: #f1c40f;">${'&#9733;'.repeat(book.rating)}</div>` : '';
             
-            // Terapkan split('T')[0] untuk membersihkan tanggal yang tampil
             const startDisplay = book.startDate ? String(book.startDate).split('T')[0] : '-';
             const finishDisplay = book.finishDate ? String(book.finishDate).split('T')[0] : '-';
 
@@ -469,7 +464,6 @@ document.getElementById('habit-form').addEventListener('submit', function(e) {
     myHabits.push(log);
     myHabits.sort((a, b) => new Date(b.date) - new Date(a.date)); 
     saveData();
-    trackActivity(); 
     this.reset();
     document.getElementById('habit-date').value = new Date().toISOString().split('T')[0];
     renderHabits();
@@ -482,10 +476,12 @@ function renderHabits() {
     tbody.innerHTML = '';
     if(myHabits.length === 0) {
         tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; opacity:0.6;">No habits logged yet.</td></tr>`;
+        
+        // Memanggil renderStats() secara manual di sini untuk memastikan nilai streak 0 kalau log kosong
+        renderStats();
         return;
     }
     myHabits.forEach(log => {
-        // Bersihkan tanggal juga di tabel habit
         const logDate = log.date ? String(log.date).split('T')[0] : '';
         tbody.innerHTML += `
             <tr>
@@ -496,6 +492,9 @@ function renderHabits() {
             </tr>
         `;
     });
+    
+    // Refresh statistik (streak akan terhitung ulang berdasarkan habit saat ini)
+    renderStats();
 }
 
 function deleteHabit(id) {
@@ -523,8 +522,6 @@ function openUpdateModal(id) {
     pagesReadInput.max = book.pages;
     
     document.getElementById('update-pages-total').value = book.pages;
-    
-    // Pastikan masuk ke input date HTML dengan format YYYY-MM-DD
     document.getElementById('update-start-date').value = book.startDate ? String(book.startDate).split('T')[0] : '';
     document.getElementById('update-finish-date').value = book.finishDate ? String(book.finishDate).split('T')[0] : '';
     
@@ -567,7 +564,6 @@ document.getElementById('update-progress-form').addEventListener('submit', funct
         }
 
         saveData();
-        trackActivity();
         renderBooks();
         progressModal.style.display = 'none';
     }
@@ -644,20 +640,30 @@ document.querySelectorAll('.filter-btn').forEach(btn => btn.addEventListener('cl
 document.getElementById('search-bar').addEventListener('input', e => { searchQuery = e.target.value.toLowerCase(); renderBooks(); });
 document.getElementById('sort-select').addEventListener('change', e => { currentSort = e.target.value; renderBooks(); });
 
-// Timer Logic
+// Timer Logic (Murni Stopwatch Visual)
 function formatTime(secs) { return `${String(Math.floor(secs/3600)).padStart(2,'0')}:${String(Math.floor((secs%3600)/60)).padStart(2,'0')}:${String(secs%60).padStart(2,'0')}`; }
+
 document.getElementById('btn-start-timer').addEventListener('click', () => {
     if (!isTimerRunning) {
-        isTimerRunning = true; trackActivity();
+        isTimerRunning = true; 
         timerInterval = setInterval(() => {
-            seconds++; totalTimeRead++;
+            seconds++; 
             document.getElementById('timer-display').innerText = formatTime(seconds);
-            if(seconds % 60 === 0) { localStorage.setItem('totalTimeRead', totalTimeRead); renderStats(); saveData(); }
         }, 1000);
     }
 });
-document.getElementById('btn-pause-timer').addEventListener('click', () => { isTimerRunning = false; clearInterval(timerInterval); localStorage.setItem('totalTimeRead', totalTimeRead); renderStats(); saveData(); });
-document.getElementById('btn-reset-timer').addEventListener('click', () => { isTimerRunning = false; clearInterval(timerInterval); localStorage.setItem('totalTimeRead', totalTimeRead); seconds = 0; document.getElementById('timer-display').innerText = formatTime(seconds); renderStats(); saveData(); });
+
+document.getElementById('btn-pause-timer').addEventListener('click', () => { 
+    isTimerRunning = false; 
+    clearInterval(timerInterval); 
+});
+
+document.getElementById('btn-reset-timer').addEventListener('click', () => { 
+    isTimerRunning = false; 
+    clearInterval(timerInterval); 
+    seconds = 0; 
+    document.getElementById('timer-display').innerText = formatTime(seconds); 
+});
 
 // Theme
 document.getElementById('theme-toggle').addEventListener('click', () => {
@@ -672,30 +678,4 @@ document.getElementById('theme-toggle').addEventListener('click', () => {
 });
 
 // Export / Import
-document.getElementById('btn-export').addEventListener('click', () => {
-    const data = { library: myLibrary, wishlist: myWishlist, habits: myHabits, streak, lastReadDate, readingGoal, totalTimeRead };
-    const a = document.createElement('a');
-    a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
-    a.download = `reading-tracker-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-});
-document.getElementById('btn-import').addEventListener('click', () => document.getElementById('file-import').click());
-document.getElementById('file-import').addEventListener('change', e => {
-    const file = e.target.files[0];
-    if (!file || !confirm('Overwrite current data?')) { e.target.value = ''; return; }
-    const reader = new FileReader();
-    reader.onload = ev => {
-        try {
-            const d = JSON.parse(ev.target.result);
-            if (d.library) {
-                myLibrary = d.library; myWishlist = d.wishlist || []; myHabits = d.habits || [];
-                streak = d.streak || 0; lastReadDate = d.lastReadDate || null; readingGoal = d.readingGoal || 0; totalTimeRead = d.totalTimeRead || 0;
-                saveData(); localStorage.setItem('readingStreak', streak); if(lastReadDate) localStorage.setItem('lastReadDate', lastReadDate); localStorage.setItem('readingGoal', readingGoal); localStorage.setItem('totalTimeRead', totalTimeRead);
-                alert('Success!'); location.reload();
-            }
-        } catch(err) { alert('Invalid backup file format.'); }
-    };
-    reader.readAsText(file);
-});
-
-init();
+document.getElementById('btn-export').addEventListener('click', ()
