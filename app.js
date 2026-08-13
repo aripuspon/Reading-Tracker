@@ -678,4 +678,30 @@ document.getElementById('theme-toggle').addEventListener('click', () => {
 });
 
 // Export / Import
-document.getElementById('btn-export').addEventListener('click', ()
+document.getElementById('btn-export').addEventListener('click', () => {
+    const data = { library: myLibrary, wishlist: myWishlist, habits: myHabits, readingGoal };
+    const a = document.createElement('a');
+    a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
+    a.download = `reading-tracker-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+});
+document.getElementById('btn-import').addEventListener('click', () => document.getElementById('file-import').click());
+document.getElementById('file-import').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file || !confirm('Overwrite current data?')) { e.target.value = ''; return; }
+    const reader = new FileReader();
+    reader.onload = ev => {
+        try {
+            const d = JSON.parse(ev.target.result);
+            if (d.library) {
+                myLibrary = d.library; myWishlist = d.wishlist || []; myHabits = d.habits || [];
+                readingGoal = d.readingGoal || 0; 
+                saveData(); localStorage.setItem('readingGoal', readingGoal); 
+                alert('Success!'); location.reload();
+            }
+        } catch(err) { alert('Invalid backup file format.'); }
+    };
+    reader.readAsText(file);
+});
+
+init();
