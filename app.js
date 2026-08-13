@@ -1,8 +1,8 @@
 // =========================================================================
 // GOOGLE SHEETS HYBRID API CONFIGURATION
-// Tempel URL Google Apps Script kamu di sini (Boleh dikosongkan terlebih dahulu):
+// Tempel URL Google Apps Script kamu di sini:
 // =========================================================================
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyNdzf0IHZZ2dDid2q6obDJ2G2S-DjUdscdcctYmXr2w116J2CUbP7XaUJcO66mk4gGnA/exec'; 
+const SCRIPT_URL = ''; 
 
 // Data States
 let myLibrary = [];
@@ -157,8 +157,9 @@ async function syncFromCloud() {
                     status: String(b.status || 'Want to Read'),
                     rating: parseInt(b.rating) || 0,
                     review: String(b.review || ''),
-                    startDate: b.startDate ? String(b.startDate) : null,
-                    finishDate: b.finishDate ? String(b.finishDate) : null,
+                    // Bersihkan format T17:00:00.000Z dari Sheets
+                    startDate: b.startDate ? String(b.startDate).split('T')[0] : null,
+                    finishDate: b.finishDate ? String(b.finishDate).split('T')[0] : null,
                     quotes: quotesArr
                 };
             });
@@ -179,7 +180,7 @@ async function syncFromCloud() {
         if (data.habits && Array.isArray(data.habits) && data.habits.length > 0) {
             myHabits = data.habits.map(h => ({
                 id: String(h.id || Date.now()),
-                date: String(h.date || ''),
+                date: h.date ? String(h.date).split('T')[0] : '',
                 minutes: parseInt(h.minutes) || 0,
                 pages: parseInt(h.pages) || 0
             }));
@@ -344,6 +345,10 @@ function renderBooks() {
             const percentage = pages > 0 ? Math.min(Math.round((pagesRead / pages) * 100), 100) : 0;
             const stars = (book.rating && book.rating > 0) ? `<div style="color: #f1c40f;">${'&#9733;'.repeat(book.rating)}</div>` : '';
             
+            // Terapkan split('T')[0] untuk membersihkan tanggal yang tampil
+            const startDisplay = book.startDate ? String(book.startDate).split('T')[0] : '-';
+            const finishDisplay = book.finishDate ? String(book.finishDate).split('T')[0] : '-';
+
             const card = document.createElement('div');
             card.classList.add('book-card');
             card.innerHTML = `
@@ -354,8 +359,8 @@ function renderBooks() {
                     ${stars}
                     <div class="meta-grid">
                         <span>🏷️ ${escapeHtml(book.genre || '-')}</span>
-                        <span>🚀 Start: ${escapeHtml(book.startDate || '-')}</span>
-                        <span>🏁 Fin: ${escapeHtml(book.finishDate || '-')}</span>
+                        <span>🚀 Start: ${escapeHtml(startDisplay)}</span>
+                        <span>🏁 Fin: ${escapeHtml(finishDisplay)}</span>
                     </div>
                     <div class="progress-container"><div class="progress-bar" style="width: ${percentage}%"></div></div>
                     <span class="progress-text">${pagesRead} / ${pages} pages (${percentage}%)</span>
@@ -480,9 +485,11 @@ function renderHabits() {
         return;
     }
     myHabits.forEach(log => {
+        // Bersihkan tanggal juga di tabel habit
+        const logDate = log.date ? String(log.date).split('T')[0] : '';
         tbody.innerHTML += `
             <tr>
-                <td>${escapeHtml(log.date)}</td>
+                <td>${escapeHtml(logDate)}</td>
                 <td>${log.minutes} min</td>
                 <td>${log.pages} pg</td>
                 <td><button class="btn-del-row" onclick="deleteHabit('${log.id}')">X</button></td>
@@ -516,8 +523,10 @@ function openUpdateModal(id) {
     pagesReadInput.max = book.pages;
     
     document.getElementById('update-pages-total').value = book.pages;
-    document.getElementById('update-start-date').value = book.startDate || '';
-    document.getElementById('update-finish-date').value = book.finishDate || '';
+    
+    // Pastikan masuk ke input date HTML dengan format YYYY-MM-DD
+    document.getElementById('update-start-date').value = book.startDate ? String(book.startDate).split('T')[0] : '';
+    document.getElementById('update-finish-date').value = book.finishDate ? String(book.finishDate).split('T')[0] : '';
     
     progressModal.style.display = 'block';
 }
